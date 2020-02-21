@@ -367,36 +367,35 @@ Now let's see how powerful this can be:
 
 ```php
 
-/**
- * This recipe nests other recipes and shows alternative syntax to pass data through constructor
- */
-$data = ( new ClassRecipe( [
-    'namespace' => 'App',
-    'name'      => 'User',
-    'content'   =>
-
-    /**
-     * See ClassVarRecipe to learn how to render things without template
-     */
-        ClassVarRecipe::make()->protected()->name( '$name' )->docBlock( '// First Name' )->render()
-        . PHP_EOL . PHP_EOL .
-        ClassVarRecipe::make()->protected()->name( '$lastName' )->docBlock( '// Last Name' )->render()
-        . PHP_EOL . PHP_EOL .
         /**
-         * See ClassVarRecipe to learn how to filter data before render
+         * This recipe nests other recipes and shows alternative syntax to pass data through constructor
          */
-        FunctionRecipe::make()->name( '__construct' )
-                      ->arguments( [ 'string $name', 'string $lastName', ] )
-                      ->body( '$this->name = $name;' . PHP_EOL . '$this->lastName = $lastName;' )
-                      ->render()
-        . PHP_EOL .
-        FunctionRecipe::make()->name( 'getLastName' )->return( '$this->lastName;' )->render()
-        . PHP_EOL .
-        FunctionRecipe::make()->name( 'getName' )->return( '$this->name;' )->render(),
+        $data = ( new ClassRecipe( [
+            'namespace' => 'App',
+            'name'      => 'User',
+            'content'   =>
+            /**
+             * See ClassVarRecipe to learn how to render things without template
+             */
+                ClassVarRecipe::make()->protected()->name( '$name' )->docBlock( '// First Name' )
+                . PHP_EOL . PHP_EOL .
+                ClassVarRecipe::make()->protected()->name( '$lastName' )->docBlock( '// Last Name' )
+                . PHP_EOL . PHP_EOL .
+                /**
+                 * See ClassVarRecipe to learn how to filter data before render
+                 */
+                ConstructorRecipe::make()->arguments( [ 'string $name', 'string $lastName', ] )
+                                 ->body( '$this->name = $name;' . PHP_EOL . '$this->lastName = $lastName;' )
+                . PHP_EOL .
+                FunctionRecipe::make()->name( 'getLastName' )->return( '$this->lastName;' )
+                . PHP_EOL .
+                FunctionRecipe::make()->name( 'getName' )->return( '$this->name;' ),
 
-] ) )->render();
+        ] ) );
 
 ```
+
+Since Recipe implements __toString, you can omit render() calls here.
 
 This will produce:
 

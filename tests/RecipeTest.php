@@ -7,6 +7,7 @@ use Afterflow\Recipe\Recipes\ClassRecipe;
 use Afterflow\Recipe\Recipes\ClassVarRecipe;
 use Afterflow\Recipe\Recipes\ConstructorRecipe;
 use Afterflow\Recipe\Recipes\FunctionRecipe;
+use Afterflow\Recipe\Recipes\MethodCallRecipe;
 use PHPUnit\Framework\TestCase;
 
 class RecipeTest extends TestCase
@@ -69,10 +70,24 @@ class RecipeTest extends TestCase
         $this->assertStringContainsString('function cards()', $data);
     }
 
+    public function testMethodCall()
+    {
+        $data = MethodCallRecipe::make()->assignTo('$user =')
+                                ->on('auth()->')
+                                ->name('user')
+                                ->arguments([ '$one' ])->render();
+
+        $this->assertEquals($data, '$user = auth()->user($one);');
+    }
+
     public function testFluentFunctionRecipe()
     {
-
-        $data = FunctionRecipe::make()->name('cards')->public()->return('$this->hasMany(Card::class)')->render();
+        $data = FunctionRecipe::make()->name('cards')->public()
+                              ->return(
+                                  MethodCallRecipe::make()->on('$this->')
+                                                  ->name('hasMany')
+                                                  ->arguments([ 'Card::class' ])
+                              );
         $this->assertStringContainsString('function cards()', $data);
     }
 
@@ -98,26 +113,24 @@ class RecipeTest extends TestCase
             'namespace' => 'App',
             'name'      => 'User',
             'content'   =>
-
             /**
              * See ClassVarRecipe to learn how to render things without template
              */
-                ClassVarRecipe::make()->protected()->name('$name')->docBlock('// First Name')->render()
+                ClassVarRecipe::make()->protected()->name('$name')->docBlock('// First Name')
                 . PHP_EOL . PHP_EOL .
-                ClassVarRecipe::make()->protected()->name('$lastName')->docBlock('// Last Name')->render()
+                ClassVarRecipe::make()->protected()->name('$lastName')->docBlock('// Last Name')
                 . PHP_EOL . PHP_EOL .
                 /**
                  * See ClassVarRecipe to learn how to filter data before render
                  */
                 ConstructorRecipe::make()->arguments([ 'string $name', 'string $lastName', ])
                                  ->body('$this->name = $name;' . PHP_EOL . '$this->lastName = $lastName;')
-                                 ->render()
                 . PHP_EOL .
-                FunctionRecipe::make()->name('getLastName')->return('$this->lastName;')->render()
+                FunctionRecipe::make()->name('getLastName')->return('$this->lastName;')
                 . PHP_EOL .
-                FunctionRecipe::make()->name('getName')->return('$this->name;')->render(),
+                FunctionRecipe::make()->name('getName')->return('$this->name;'),
 
-        ]) )->render();
+        ]) );
 
         $this->assertStringContainsString('function getLastName', $data);
         $this->assertStringContainsString('function getName', $data);

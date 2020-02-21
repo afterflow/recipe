@@ -31,6 +31,11 @@ class Recipe
         $this->data = array_merge($this->data, $data);
     }
 
+    public function __toString()
+    {
+        return $this->render();
+    }
+
     /**
      * @param array $data
      *
