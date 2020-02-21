@@ -312,7 +312,7 @@ class ClassVarRecipe extends Recipe
 
 ### Implement Fluent API
 
-To make process a little more fun and simple, you can sprink some fluency on your recipe:
+To make process a little more fun and simple, you can sprinkle some fluency onto your recipe:
 
 ```php
 
