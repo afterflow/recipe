@@ -35,23 +35,15 @@ class RecipeTest extends TestCase
 
     public function testClassRecipe()
     {
-        $data = ( new ClassRecipe() )->with([
-            'namespace' => 'App',
-            'name'      => 'User',
-            'extends'   => 'Authenticatable',
-
-            'imports' => [
-                'Illuminate\Foundation\Auth\User as Authenticatable',
-                'Illuminate\Notifications\Notifiable',
-                'Laravel\Passport\HasApiTokens',
-            ],
-
-            'traits'     => [
-                'HasApiTokens',
-                'Notifiable',
-            ],
-            'implements' => [ 'SomeInterface', 'OtherInterface' ],
-        ])->render();
+        $data = ClassRecipe::make()->namespace('App')->name('User')->extends('Authenticatable')
+                           ->imports([
+                               'Illuminate\Foundation\Auth\User as Authenticatable',
+                               'Illuminate\Notifications\Notifiable',
+                               'Laravel\Passport\HasApiTokens',
+                           ])
+                           ->implements([ 'SomeInterface', 'OtherInterface' ])
+                           ->traits([ 'HasApiTokens', 'Notifiable' ])
+                           ->render();
 
         $this->assertStringContainsString('class User', $data);
     }

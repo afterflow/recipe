@@ -17,4 +17,46 @@ class ClassRecipe extends Recipe
             'default' => [],
         ],
     ];
+
+    public function namespace($value)
+    {
+        $this->data[ 'namespace' ] = $value;
+
+        return $this;
+    }
+
+    public function name($value)
+    {
+        $this->data[ 'name' ] = $value;
+
+        return $this;
+    }
+
+    public function traits($value)
+    {
+        $this->data[ 'traits' ] = $value;
+
+        return $this;
+    }
+
+    public function imports($value)
+    {
+        $this->data[ 'imports' ] = $value;
+
+        return $this;
+    }
+
+    public function implements($value)
+    {
+        $this->data[ 'implements' ] = $value;
+
+        return $this;
+    }
+
+    public function extends($value)
+    {
+        $this->data[ 'extends' ] = $value;
+
+        return $this;
+    }
 }
