@@ -193,6 +193,9 @@ $recipe = (new ClassRecipe())->with($data)->render();
 // Pass data into constructor:
 $recipe = (new ClassRecipe($data))->render();
 
+// Less braces:
+$recipe = ClassRecipe::make($data);
+
 // If your recipe defines a template or a custom render() function:
 $string = ClassRecipe::quickRender($data);
 
@@ -200,6 +203,7 @@ $string = ClassRecipe::quickRender($data);
 $data = ClassRecipe::quickBuild($data);
 
 ```
+
 
 ### Prepare template data before rendering
 
@@ -306,6 +310,57 @@ class ClassVarRecipe extends Recipe
 }
 ```
 
+### Implement Fluent API
+
+To make process a little more fun and simple, you can sprink some fluency on your recipe:
+
+```php
+
+    // ...
+
+    public function name( $name ) {
+        $this->data[ 'name' ] = $name;
+
+        return $this;
+    }
+
+    public function visibility( $value ) {
+        $this->data[ 'visibility' ] = $value;
+
+        return $this;
+    }
+
+    public function protected() {
+
+        return $this->visibility( 'protected' );
+    }
+
+    public function private() {
+
+        return $this->visibility( 'private' );
+    }
+
+    public function public() {
+
+        return $this->visibility( 'public' );
+    }
+
+    // ...
+
+```
+
+Then you can use this recipe like that:
+
+```php
+
+$data = ClassVarRecipe::make()->name( '$name' )
+                      ->protected()
+                      ->value( '"Vlad"' )
+                      ->docBlock( '// First Name' )
+                      ->render();
+
+```
+
 ## Nested recipes
 
 Now let's see how powerful this can be:
@@ -315,7 +370,7 @@ Now let's see how powerful this can be:
 /**
  * This recipe nests other recipes and shows alternative syntax to pass data through constructor
  */
-$data = ( new ClassRecipe([
+$data = ( new ClassRecipe( [
     'namespace' => 'App',
     'name'      => 'User',
     'content'   =>
@@ -323,36 +378,23 @@ $data = ( new ClassRecipe([
     /**
      * See ClassVarRecipe to learn how to render things without template
      */
-        ( new ClassVarRecipe([
-            'name'       => '$name',
-            'visibility' => 'protected',
-            'docBlock'   => '// First Name',
-            'value'      => '"Vlad"',
-        ]) )->render()
+        ClassVarRecipe::make()->protected()->name( '$name' )->docBlock( '// First Name' )->render()
         . PHP_EOL . PHP_EOL .
-        /**
-         * Alternative syntax if the recipe has template
-         */
-        ClassVarRecipe::quickRender([
-            'name'       => '$lastName',
-            'visibility' => 'protected',
-            'docBlock'   => '// Last Name',
-        ])
+        ClassVarRecipe::make()->protected()->name( '$lastName' )->docBlock( '// Last Name' )->render()
         . PHP_EOL . PHP_EOL .
         /**
          * See ClassVarRecipe to learn how to filter data before render
          */
-        FunctionRecipe::quickRender([
-            'name'      => '__construct',
-            'arguments' => [ 'string $name', 'string $lastName', ],
-            'body'      => '$this->name = $name;' . PHP_EOL . '$this->lastName = $lastName;',
-        ])
+        FunctionRecipe::make()->name( '__construct' )
+                      ->arguments( [ 'string $name', 'string $lastName', ] )
+                      ->body( '$this->name = $name;' . PHP_EOL . '$this->lastName = $lastName;' )
+                      ->render()
         . PHP_EOL .
-        FunctionRecipe::quickRender([ 'name' => 'getLastName', 'return' => '$this->lastName;', ])
+        FunctionRecipe::make()->name( 'getLastName' )->return( '$this->lastName;' )->render()
         . PHP_EOL .
-        FunctionRecipe::quickRender([ 'name' => 'getName', 'return' => '$this->name;', ]),
+        FunctionRecipe::make()->name( 'getName' )->return( '$this->name;' )->render(),
 
-]) )->render();
+] ) )->render();
 
 ```
 

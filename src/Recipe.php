@@ -14,8 +14,7 @@ use Illuminate\Translation\ArrayLoader;
 use Illuminate\Translation\Translator;
 use Illuminate\Validation\Validator;
 
-class Recipe
-{
+class Recipe {
 
     protected $data = [];
     protected $props = [];
@@ -26,9 +25,17 @@ class Recipe
      *
      * @param array $data
      */
-    public function __construct($data = [])
-    {
+    public function __construct( $data = [] ) {
         $this->data = $data;
+    }
+
+    /**
+     * @param array $data
+     *
+     * @return static
+     */
+    public static function make( $data = [] ) {
+        return new static( $data );
     }
 
     /**
@@ -37,9 +44,8 @@ class Recipe
      *
      * @return string
      */
-    public static function quickRender($data = [], $to = null)
-    {
-        return ( new static($data) )->render($to);
+    public static function quickRender( $data = [], $to = null ) {
+        return static::make( $data )->render( $to );
     }
 
     /**
@@ -47,9 +53,8 @@ class Recipe
      *
      * @return array
      */
-    public static function quickBuild($data = [])
-    {
-        return ( new static($data) )->build();
+    public static function quickBuild( $data = [] ) {
+        return static::make( $data )->build();
     }
 
     /**
@@ -58,26 +63,24 @@ class Recipe
      *
      * @return string
      */
-    public static function indent($string, $spaces = 4)
-    {
+    public static function indent( $string, $spaces = 4 ) {
         $tab = '';
-        for ($i = 0; $i < $spaces; $i++) {
+        for ( $i = 0; $i < $spaces; $i ++ ) {
             $tab .= ' ';
         }
 
-        return $tab . collect(explode(PHP_EOL, $string))->implode(PHP_EOL . $tab);
+        return $tab . collect( explode( PHP_EOL, $string ) )->implode( PHP_EOL . $tab );
     }
 
     /**
      * @return array
      * @throws \Exception
      */
-    public function build()
-    {
+    public function build() {
 
         $this->validateParams();
 
-        if (method_exists($this, 'prepare')) {
+        if ( method_exists( $this, 'prepare' ) ) {
             $this->prepare();
         }
 
@@ -89,8 +92,7 @@ class Recipe
      *
      * @return $this
      */
-    public function template($template)
-    {
+    public function template( $template ) {
         $this->template = $template;
 
         return $this;
@@ -101,9 +103,8 @@ class Recipe
      *
      * @return $this
      */
-    public function with($data)
-    {
-        $this->data = array_merge($this->data, $data);
+    public function with( $data ) {
+        $this->data = array_merge( $this->data, $data );
 
         return $this;
     }
@@ -114,29 +115,28 @@ class Recipe
      * @return string
      * @throws \Exception
      */
-    public function render($saveTo = null)
-    {
+    public function render( $saveTo = null ) {
         $data = $this->build();
 
-        if (method_exists($this, 'dataForTemplate')) {
+        if ( method_exists( $this, 'dataForTemplate' ) ) {
             $data = $this->dataForTemplate();
         }
 
-        $eventDispatcher = new Dispatcher(new Container());
+        $eventDispatcher = new Dispatcher( new Container() );
 
         $viewResolver  = new EngineResolver();
-        $bladeCompiler = new BladeCompiler(new Filesystem(), '/tmp');
+        $bladeCompiler = new BladeCompiler( new Filesystem(), '/tmp' );
 
-        $viewResolver->register('blade', function () use ($bladeCompiler) {
-            return new CompilerEngine($bladeCompiler);
-        });
+        $viewResolver->register( 'blade', function () use ( $bladeCompiler ) {
+            return new CompilerEngine( $bladeCompiler );
+        } );
 
-        $viewFinder  = new FileViewFinder(new Filesystem(), [ '/tmp' ]);
-        $viewFactory = new Factory($viewResolver, $viewFinder, $eventDispatcher);
+        $viewFinder  = new FileViewFinder( new Filesystem(), [ '/tmp' ] );
+        $viewFactory = new Factory( $viewResolver, $viewFinder, $eventDispatcher );
 
-        $rendered = $viewFactory->file($this->template, $data)->render();
-        if ($saveTo) {
-            file_put_contents($saveTo, $rendered);
+        $rendered = $viewFactory->file( $this->template, $data )->render();
+        if ( $saveTo ) {
+            file_put_contents( $saveTo, $rendered );
         }
 
         return $rendered;
@@ -145,38 +145,38 @@ class Recipe
     /**
      * @throws \Exception
      */
-    protected function validateParams()
-    {
+    protected function validateParams() {
         $rules = [];
 
-        foreach ($this->props as $name => $parameter) {
-            if (! is_array($parameter)) {
+        foreach ( $this->props as $name => $parameter ) {
+            if ( ! is_array( $parameter ) ) {
                 $parameter = [
                     'default' => $parameter,
                 ];
             }
 
-            if (isset($parameter[ 'rules' ])) {
+            if ( isset( $parameter[ 'rules' ] ) ) {
                 $rules[ $name ] = $parameter[ 'rules' ];
             }
 
             $default       = null;
             $defaultIsNull = true;
 
-            if (isset($parameter[ 'default' ])) {
+            if ( isset( $parameter[ 'default' ] ) ) {
                 $default       = $parameter[ 'default' ];
                 $defaultIsNull = false;
             } else {
                 try {
                     $parameter[ 'default' ];
-                } catch (\Exception $e) {
+                }
+                catch ( \Exception $e ) {
                     $defaultIsNull = false;
                 }
             }
 
 
-            if (! isset($this->data[ $name ])) {
-                if ($defaultIsNull) {
+            if ( ! isset( $this->data[ $name ] ) ) {
+                if ( $defaultIsNull ) {
                     $this->data[ $name ] = null;
                 } else {
                     $this->data[ $name ] = $default;
@@ -184,10 +184,10 @@ class Recipe
             }
         }
 
-        $v = new Validator(new Translator(new ArrayLoader(), 'en'), $this->data, $rules);
+        $v = new Validator( new Translator( new ArrayLoader(), 'en' ), $this->data, $rules );
 
-        if ($v->fails()) {
-            throw new \Exception(collect($v->errors()->all())->implode(PHP_EOL));
+        if ( $v->fails() ) {
+            throw new \Exception( collect( $v->errors()->all() )->implode( PHP_EOL ) );
         }
     }
 }
