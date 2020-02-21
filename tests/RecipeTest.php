@@ -5,6 +5,7 @@ namespace Afterflow\Recipe\Tests;
 use Afterflow\Recipe\Recipe;
 use Afterflow\Recipe\Recipes\ClassRecipe;
 use Afterflow\Recipe\Recipes\ClassVarRecipe;
+use Afterflow\Recipe\Recipes\ConstructorRecipe;
 use Afterflow\Recipe\Recipes\FunctionRecipe;
 use PHPUnit\Framework\TestCase;
 
@@ -108,10 +109,9 @@ class RecipeTest extends TestCase
                 /**
                  * See ClassVarRecipe to learn how to filter data before render
                  */
-                FunctionRecipe::make()->name('__construct')
-                              ->arguments([ 'string $name', 'string $lastName', ])
-                              ->body('$this->name = $name;' . PHP_EOL . '$this->lastName = $lastName;')
-                              ->render()
+                ConstructorRecipe::make()->arguments([ 'string $name', 'string $lastName', ])
+                                 ->body('$this->name = $name;' . PHP_EOL . '$this->lastName = $lastName;')
+                                 ->render()
                 . PHP_EOL .
                 FunctionRecipe::make()->name('getLastName')->return('$this->lastName;')->render()
                 . PHP_EOL .
