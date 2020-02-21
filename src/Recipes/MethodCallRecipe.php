@@ -96,7 +96,7 @@ class MethodCallRecipe extends Recipe
 
         $string .= $args;
 
-        $string .= ');';
+        $string .= ')';
 
         if ($to) {
             file_put_contents($to, $string);

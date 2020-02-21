@@ -76,7 +76,6 @@ class FunctionRecipe extends Recipe
         $data[ 'methodCall' ] = MethodCallRecipe::make()
                                                 ->name($this->data[ 'name' ])
                                                 ->arguments($data[ 'arguments' ])->render();
-//        dd($data);
 
         $data[ 'arguments' ] = collect($data[ 'arguments' ])->implode(', ');
 

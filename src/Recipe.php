@@ -199,6 +199,7 @@ class Recipe
             }
         }
 
+        // TODO fix validation
         $v = new Validator(new Translator(new ArrayLoader(), 'en'), $this->data, $rules);
 
         if ($v->fails()) {
