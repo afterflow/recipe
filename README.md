@@ -395,7 +395,7 @@ class User
 
 Now you can extend or nest the `ClassRecipe` to make a Laravel Model recipe and create a console command to generate a model or do any other crazy stuff.
 
-### Build in recipes you can use:
+### Built in recipes you can use:
 
 - ClassRecipe
 - ClassVarRecipe
