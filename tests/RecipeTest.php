@@ -8,28 +8,32 @@ use Afterflow\Recipe\Recipes\ClassVarRecipe;
 use Afterflow\Recipe\Recipes\FunctionRecipe;
 use PHPUnit\Framework\TestCase;
 
-class RecipeTest extends TestCase {
+class RecipeTest extends TestCase
+{
 
-    public function testBuild() {
+    public function testBuild()
+    {
         $recipe = new Recipe();
-        $data   = $recipe->with( [ 'name' => 'Vlad', 'last_name' => 'Libre' ] )->build();
+        $data   = $recipe->with([ 'name' => 'Vlad', 'last_name' => 'Libre' ])->build();
 
-        $this->assertEquals( 'Vlad', $data[ 'name' ] );
+        $this->assertEquals('Vlad', $data[ 'name' ]);
     }
 
-    public function testRender() {
+    public function testRender()
+    {
         $recipe = new Recipe();
-        $data   = $recipe->with( [ 'name' => 'Vlad', 'last_name' => 'Libre' ] )
-                         ->template( __DIR__ . '/templates/user.blade.php' )
+        $data   = $recipe->with([ 'name' => 'Vlad', 'last_name' => 'Libre' ])
+                         ->template(__DIR__ . '/templates/user.blade.php')
                          ->render()
             /**//**/
         ;
 
-        $this->assertStringContainsString( 'Name: Vlad', $data );
+        $this->assertStringContainsString('Name: Vlad', $data);
     }
 
-    public function testClassRecipe() {
-        $data = ( new ClassRecipe() )->with( [
+    public function testClassRecipe()
+    {
+        $data = ( new ClassRecipe() )->with([
             'namespace' => 'App',
             'name'      => 'User',
             'extends'   => 'Authenticatable',
@@ -45,48 +49,51 @@ class RecipeTest extends TestCase {
                 'Notifiable',
             ],
             'implements' => [ 'SomeInterface', 'OtherInterface' ],
-        ] )->render();
+        ])->render();
 
-        $this->assertStringContainsString( 'class User', $data );
+        $this->assertStringContainsString('class User', $data);
     }
 
-    public function testFunctionRecipe() {
+    public function testFunctionRecipe()
+    {
         $data = ( new FunctionRecipe() )
-            ->with( [
+            ->with([
                 'name'       => 'cards',
                 'visibility' => 'public',
                 'arguments'  => [
                 ],
                 'return'     => '$this->hasMany(Card::class)',
-            ] )
+            ])
             ->render();
-        $this->assertStringContainsString( 'function cards()', $data );
+        $this->assertStringContainsString('function cards()', $data);
     }
 
-    public function testFluentFunctionRecipe() {
+    public function testFluentFunctionRecipe()
+    {
 
-        $data = FunctionRecipe::make()->name( 'cards' )->public()->return( '$this->hasMany(Card::class)' )->render();
-        $this->assertStringContainsString( 'function cards()', $data );
+        $data = FunctionRecipe::make()->name('cards')->public()->return('$this->hasMany(Card::class)')->render();
+        $this->assertStringContainsString('function cards()', $data);
     }
 
-    public function testFluentClassVarRecipe() {
+    public function testFluentClassVarRecipe()
+    {
 
-        $data = ClassVarRecipe::make()->name( '$name' )
+        $data = ClassVarRecipe::make()->name('$name')
                               ->protected()
-                              ->value( '"Vlad"' )
-                              ->docBlock( '// First Name' )
+                              ->value('"Vlad"')
+                              ->docBlock('// First Name')
                               ->render();
 
-        $this->assertStringContainsString( 'protected $name = "Vlad";', $data );
-
+        $this->assertStringContainsString('protected $name = "Vlad";', $data);
     }
 
-    public function testNestedRecipes() {
+    public function testNestedRecipes()
+    {
 
         /**
          * This recipe nests other recipes and shows alternative syntax to pass data through constructor
          */
-        $data = ( new ClassRecipe( [
+        $data = ( new ClassRecipe([
             'namespace' => 'App',
             'name'      => 'User',
             'content'   =>
@@ -94,26 +101,26 @@ class RecipeTest extends TestCase {
             /**
              * See ClassVarRecipe to learn how to render things without template
              */
-                ClassVarRecipe::make()->protected()->name( '$name' )->docBlock( '// First Name' )->render()
+                ClassVarRecipe::make()->protected()->name('$name')->docBlock('// First Name')->render()
                 . PHP_EOL . PHP_EOL .
-                ClassVarRecipe::make()->protected()->name( '$lastName' )->docBlock( '// Last Name' )->render()
+                ClassVarRecipe::make()->protected()->name('$lastName')->docBlock('// Last Name')->render()
                 . PHP_EOL . PHP_EOL .
                 /**
                  * See ClassVarRecipe to learn how to filter data before render
                  */
-                FunctionRecipe::make()->name( '__construct' )
-                              ->arguments( [ 'string $name', 'string $lastName', ] )
-                              ->body( '$this->name = $name;' . PHP_EOL . '$this->lastName = $lastName;' )
+                FunctionRecipe::make()->name('__construct')
+                              ->arguments([ 'string $name', 'string $lastName', ])
+                              ->body('$this->name = $name;' . PHP_EOL . '$this->lastName = $lastName;')
                               ->render()
                 . PHP_EOL .
-                FunctionRecipe::make()->name( 'getLastName' )->return( '$this->lastName;' )->render()
+                FunctionRecipe::make()->name('getLastName')->return('$this->lastName;')->render()
                 . PHP_EOL .
-                FunctionRecipe::make()->name( 'getName' )->return( '$this->name;' )->render(),
+                FunctionRecipe::make()->name('getName')->return('$this->name;')->render(),
 
-        ] ) )->render();
+        ]) )->render();
 
-        $this->assertStringContainsString( 'function getLastName', $data );
-        $this->assertStringContainsString( 'function getName', $data );
-        $this->assertStringContainsString( 'protected $lastName', $data );
+        $this->assertStringContainsString('function getLastName', $data);
+        $this->assertStringContainsString('function getName', $data);
+        $this->assertStringContainsString('protected $lastName', $data);
     }
 }
