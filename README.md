@@ -395,7 +395,7 @@ Now let's see how powerful this can be:
 
 ```
 
-Since Recipe implements __toString, you can omit render() calls here.
+Since Recipe implements `__toString`, you can omit `render()` calls here.
 
 This will produce:
 
@@ -441,4 +441,5 @@ Now you can extend or nest the `ClassRecipe` to make a Laravel Model recipe and 
 - ClassRecipe
 - ClassVarRecipe
 - FunctionRecipe
-
+- MethodCallRecipe
+- ConstructorRecipe
