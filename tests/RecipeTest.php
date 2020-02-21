@@ -101,28 +101,24 @@ class RecipeTest extends TestCase
         /**
          * This recipe nests other recipes and shows alternative syntax to pass data through constructor
          */
-        $data = ( new ClassRecipe([
-            'namespace' => 'App',
-            'name'      => 'User',
-            'content'   =>
-            /**
-             * See ClassVarRecipe to learn how to render things without template
-             */
-                ClassVarRecipe::make()->protected()->name('$name')->docBlock('// First Name')
-                . PHP_EOL . PHP_EOL .
-                ClassVarRecipe::make()->protected()->name('$lastName')->docBlock('// Last Name')
-                . PHP_EOL . PHP_EOL .
+        $data = ClassRecipe::make()->namespace('App')->name('User')->content(
+        /**
+         * See ClassVarRecipe to learn how to render things without template
+         */
+            implode(PHP_EOL . PHP_EOL, [
+                ClassVarRecipe::make()->protected()->name('$name')->docBlock('// First Name'),
+                ClassVarRecipe::make()->protected()->name('$lastName')->docBlock('// Last Name'),
                 /**
                  * See ClassVarRecipe to learn how to filter data before render
                  */
-                ConstructorRecipe::make()->arguments([ 'string $name', 'string $lastName', ])
-                                 ->body('$this->name = $name;' . PHP_EOL . '$this->lastName = $lastName;')
-                . PHP_EOL .
-                FunctionRecipe::make()->name('getLastName')->return('$this->lastName;')
-                . PHP_EOL .
+                ConstructorRecipe::make()->arguments([
+                    'string $name',
+                    'string $lastName',
+                ])->body('$this->name = $name;' . PHP_EOL . '$this->lastName = $lastName;'),
+                FunctionRecipe::make()->name('getLastName')->return('$this->lastName;'),
                 FunctionRecipe::make()->name('getName')->return('$this->name;'),
-
-        ]) );
+            ])
+        );
 
         $this->assertStringContainsString('function getLastName', $data);
         $this->assertStringContainsString('function getName', $data);
