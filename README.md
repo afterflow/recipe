@@ -242,7 +242,7 @@ class FunctionRecipe extends Recipe
 
 ### Custom rendering
 
-By overriding the `render()` method in your recipe you can create recipes withot template or define any other custom rendering logic.
+By overriding the `render()` method in your recipe you can create recipes without template or define any other custom rendering logic.
 Just make sure to call `$this->build()` inside to apply props to the input.
 
 ```php
