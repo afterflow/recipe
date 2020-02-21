@@ -54,7 +54,7 @@ So basically we just compiled a Blade template with the given data. But that's n
 
 ## Custom Recipe classes
 
-Let's build a simple custom recipe we can reuse or event nest on other recipes.
+Let's build a simple custom recipe we can reuse or even nest on other recipes.
 It will create a class from a stub and return the source code.
 
 Template:
