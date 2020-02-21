@@ -1,4 +1,4 @@
-{{$visibility ? $visibility.' ' : ''}}{{ $abstract ? $abstract.' ' : '' }}{{ $static ? $static.' ' : '' }}function {{ $name }}({{$arguments}})
+{{$visibility ? $visibility.' ' : ''}}{{ $abstract ? $abstract.' ' : '' }}{{ $static ? $static.' ' : '' }}function {{$methodCall}}
 {
 @if($body)
 {!! \Afterflow\Recipe\Recipe::indent( $body ) !!}

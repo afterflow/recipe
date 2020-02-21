@@ -3,9 +3,13 @@
 namespace Afterflow\Recipe\Recipes;
 
 use Afterflow\Recipe\Recipe;
+use Afterflow\Recipe\Recipes\Concerns\HasDocBlock;
+use Afterflow\Recipe\Recipes\Concerns\HasVisibility;
 
 class FunctionRecipe extends Recipe
 {
+    use HasDocBlock;
+    use HasVisibility;
 
     protected $template = __DIR__ . '/../../templates/function.blade.php';
 
@@ -24,7 +28,7 @@ class FunctionRecipe extends Recipe
 
     public function arguments($value)
     {
-        $this->data[ 'arguments' ] = [];
+        $this->data[ 'arguments' ] = $value;
 
         return $this;
     }
@@ -41,31 +45,6 @@ class FunctionRecipe extends Recipe
         $this->data[ 'name' ] = $name;
 
         return $this;
-    }
-
-    public function visibility($value)
-    {
-        $this->data[ 'visibility' ] = $value;
-
-        return $this;
-    }
-
-    public function protected()
-    {
-
-        return $this->visibility('protected');
-    }
-
-    public function private()
-    {
-
-        return $this->visibility('private');
-    }
-
-    public function public()
-    {
-
-        return $this->visibility('public');
     }
 
     public function return($v)
@@ -89,17 +68,15 @@ class FunctionRecipe extends Recipe
         return $this;
     }
 
-    public function docBlock($value)
-    {
-        $this->data[ 'docBlock' ] = $value;
-
-        return $this;
-    }
-
     public function dataForTemplate()
     {
 
         $data = $this->data;
+
+        $data[ 'methodCall' ] = MethodCallRecipe::make()
+                                                ->name($this->data[ 'name' ])
+                                                ->arguments($data[ 'arguments' ])->render();
+//        dd($data);
 
         $data[ 'arguments' ] = collect($data[ 'arguments' ])->implode(', ');
 

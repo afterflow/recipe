@@ -3,9 +3,13 @@
 namespace Afterflow\Recipe\Recipes;
 
 use Afterflow\Recipe\Recipe;
+use Afterflow\Recipe\Recipes\Concerns\HasDocBlock;
+use Afterflow\Recipe\Recipes\Concerns\HasVisibility;
 
 class ClassVarRecipe extends Recipe
 {
+    use HasDocBlock;
+    use HasVisibility;
 
     protected $props = [
         'name'       => [
@@ -38,38 +42,6 @@ class ClassVarRecipe extends Recipe
         $this->data[ 'static' ] = true;
 
         return $this;
-    }
-
-    public function docBlock($value)
-    {
-        $this->data[ 'docBlock' ] = $value;
-
-        return $this;
-    }
-
-    public function visibility($value)
-    {
-        $this->data[ 'visibility' ] = $value;
-
-        return $this;
-    }
-
-    public function protected()
-    {
-
-        return $this->visibility('protected');
-    }
-
-    public function private()
-    {
-
-        return $this->visibility('private');
-    }
-
-    public function public()
-    {
-
-        return $this->visibility('public');
     }
 
     public function render($to = null)
