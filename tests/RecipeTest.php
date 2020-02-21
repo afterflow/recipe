@@ -69,7 +69,7 @@ class RecipeTest extends TestCase
                                 ->name('user')
                                 ->arguments([ '$one' ])->render();
 
-        $this->assertEquals($data, '$user = auth()->user($one);');
+        $this->assertEquals($data, '$user = auth()->user($one)');
     }
 
     public function testFluentFunctionRecipe()
