@@ -54,12 +54,24 @@ class RecipeTest extends TestCase
             ->with([
                 'name'       => 'cards',
                 'visibility' => 'public',
-                'arguments'  => [
-                ],
+                'arguments'  => [],
                 'return'     => '$this->hasMany(Card::class)',
             ])
             ->render();
         $this->assertStringContainsString('function cards()', $data);
+    }
+
+    public function testValidation()
+    {
+
+        try {
+            MethodCallRecipe::make()->on([ 'array' ])->name('something')->render();
+        } catch (\Exception $e) {
+            $this->assertStringContainsString('must be string', $e->getMessage());
+        }
+
+        $this->expectExceptionMessage('The name field is required.');
+        MethodCallRecipe::make()->on([ 'array' ])->render();
     }
 
     public function testMethodCall()
@@ -78,8 +90,8 @@ class RecipeTest extends TestCase
                               ->return(
                                   MethodCallRecipe::make()->on('$this->')
                                                   ->name('hasMany')
-                                                  ->arguments([ 'Card::class' ])
-                              );
+                                                  ->arguments([ 'Card::class' ])->render()
+                              )->render();
         $this->assertStringContainsString('function cards()', $data);
     }
 
@@ -114,9 +126,9 @@ class RecipeTest extends TestCase
                 ConstructorRecipe::make()->arguments([
                     'string $name',
                     'string $lastName',
-                ])->body('$this->name = $name;' . PHP_EOL . '$this->lastName = $lastName;'),
-                FunctionRecipe::make()->name('getLastName')->return('$this->lastName;'),
-                FunctionRecipe::make()->name('getName')->return('$this->name;'),
+                ])->body('$this->name = $name;' . PHP_EOL . '$this->lastName = $lastName;')->render(),
+                FunctionRecipe::make()->name('getLastName')->return('$this->lastName;')->render(),
+                FunctionRecipe::make()->name('getName')->return('$this->name;')->render(),
             ])
         );
 

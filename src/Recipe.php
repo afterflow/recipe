@@ -5,14 +5,13 @@ namespace Afterflow\Recipe;
 use Illuminate\Container\Container;
 use Illuminate\Events\Dispatcher;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Translation\FileLoader;
+use Illuminate\Translation\Translator;
+use Illuminate\Validation\Factory;
 use Illuminate\View\Compilers\BladeCompiler;
 use Illuminate\View\Engines\CompilerEngine;
 use Illuminate\View\Engines\EngineResolver;
-use Illuminate\View\Factory;
 use Illuminate\View\FileViewFinder;
-use Illuminate\Translation\ArrayLoader;
-use Illuminate\Translation\Translator;
-use Illuminate\Validation\Validator;
 
 class Recipe
 {
@@ -90,7 +89,10 @@ class Recipe
     public function build()
     {
 
-        $this->validateParams();
+        if ($errors =  $this->errors()) {
+            throw new \Exception($errors->first());
+        }
+
 
         if (method_exists($this, 'prepare')) {
             $this->prepare();
@@ -127,7 +129,6 @@ class Recipe
      * @param null $saveTo
      *
      * @return string
-     * @throws \Exception
      */
     public function render($saveTo = null)
     {
@@ -147,7 +148,7 @@ class Recipe
         });
 
         $viewFinder  = new FileViewFinder(new Filesystem(), [ '/tmp' ]);
-        $viewFactory = new Factory($viewResolver, $viewFinder, $eventDispatcher);
+        $viewFactory = new \Illuminate\View\Factory($viewResolver, $viewFinder, $eventDispatcher);
 
         $rendered = $viewFactory->file($this->template, $data)->render();
         if ($saveTo) {
@@ -157,10 +158,7 @@ class Recipe
         return $rendered;
     }
 
-    /**
-     * @throws \Exception
-     */
-    protected function validateParams()
+    protected function errors()
     {
         $rules = [];
 
@@ -199,11 +197,16 @@ class Recipe
             }
         }
 
-        // TODO fix validation
-        $v = new Validator(new Translator(new ArrayLoader(), 'en'), $this->data, $rules);
+        $loader     = new FileLoader(new Filesystem(), 'lang');
+        $translator = new Translator($loader, 'en');
+        $validation = new Factory($translator, new Container());
 
-        if ($v->fails()) {
-            throw new \Exception(collect($v->errors()->all())->implode(PHP_EOL));
+        $validator = $validation->make($this->data, $rules);
+
+        if ($validator->fails()) {
+            return $validator->errors();
         }
+
+        return [];
     }
 }

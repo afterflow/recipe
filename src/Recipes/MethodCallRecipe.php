@@ -18,7 +18,10 @@ class MethodCallRecipe extends Recipe
             'rules' => 'required',
         ],
         'arguments' => [],
-        'object'    => null,
+        'object'    => [
+            'default' => '',
+            'rules' => 'string'
+        ],
         'assignTo'  => null,
     ];
 
