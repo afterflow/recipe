@@ -16,18 +16,23 @@ use Illuminate\View\FileViewFinder;
 class Recipe
 {
 
-    protected $data = [];
+    protected $input = [];
     protected $props = [];
     protected $template;
+    /**
+     * Use another class to render the result
+     * @var string
+     */
+    protected $renderOn;
 
     /**
      * Recipe constructor.
      *
-     * @param array $data
+     * @param array $input
      */
-    public function __construct($data = [])
+    public function __construct($input = [])
     {
-        $this->data = array_merge($this->data, $data);
+        $this->input = array_replace($this->input, $input);
     }
 
     public function __toString()
@@ -35,35 +40,114 @@ class Recipe
         return $this->render();
     }
 
+    public function input($key = null, $value = null)
+    {
+
+        if ($value !== null) {
+            $this->input[ $key ] = $value;
+
+            return $this;
+        }
+
+        if ($key) {
+            if (! isset($this->input[ $key ])) {
+                throw new \Exception($key . ' was not provided in the input');
+            }
+
+            return $this->input[ $key ];
+        }
+
+        return $this->input;
+    }
+
+    public function data($key = null)
+    {
+
+        if ($key) {
+            // apply prop to input
+            $prop  = $this->props[ $key ];
+            $value = null;
+
+            // apply default
+            if (! isset($this->input[ $key ])) {
+                // this parameter is absent, let's check if we have a default
+
+                if (isset($prop[ 'default' ])) {
+                    $value = $prop[ 'default' ];
+                }
+                // no value and no default
+            } else {
+                $value = $this->input($key);
+            }
+            //          if( $key == 'arguments')
+            //          {
+            //              dd($prop, $value);
+            //          }
+
+            // do some validation
+
+            $rules      = $prop[ 'rules' ] ?? [];
+            $validation = $this->validation($key, $value, $rules);
+            if ($validation->fails()) {
+                throw new \Exception(static::class . ': ' . $validation->errors()->first());
+            }
+
+            return $value;
+        }
+
+        // For inline recipes
+        if (empty($this->props)) {
+            return $this->input();
+        }
+
+        $data = [];
+        foreach (array_keys($this->props) as $key) {
+            $data[ $key ] = $this->data($key);
+        }
+
+        return $data;
+    }
+
+    protected function validation($key, $value = null, $rules = [])
+    {
+
+        $loader     = new FileLoader(new Filesystem(), 'lang');
+        $translator = new Translator($loader, 'en');
+        $validation = new Factory($translator, new Container());
+
+        return $validation->make([ $key => $value ], [ $key => $rules ]);
+    }
+
+
     /**
-     * @param array $data
+     * @param array $input
      *
      * @return static
      */
-    public static function make($data = [])
+    public static function make($input = [])
     {
-        return new static($data);
+        return new static($input);
     }
 
     /**
-     * @param array $data
+     * @param array $input
      * @param null $to
      *
      * @return string
      */
-    public static function quickRender($data = [], $to = null)
+    public static function quickRender($input = [], $to = null)
     {
-        return static::make($data)->render($to);
+        return static::make($input)->render($to);
     }
 
     /**
-     * @param array $data
+     * @param array $input
      *
      * @return array
      */
-    public static function quickBuild($data = [])
+    public static function quickBuild($input = [])
     {
-        return static::make($data)->build();
+        return static::make($input)->build();
     }
 
     /**
@@ -89,16 +173,7 @@ class Recipe
     public function build()
     {
 
-        if ($errors =  $this->errors()) {
-            throw new \Exception($errors->first());
-        }
-
-
-        if (method_exists($this, 'prepare')) {
-            $this->prepare();
-        }
-
-        return $this->data;
+        return $this->data();
     }
 
     /**
@@ -114,15 +189,32 @@ class Recipe
     }
 
     /**
-     * @param $data
+     * @param $input
      *
      * @return $this
      */
-    public function with($data)
+    public function with($input)
     {
-        $this->data = array_merge($this->data, $data);
+        $this->input = array_merge($this->input, $input);
 
         return $this;
+    }
+
+    public static function sequence($things, $glue = ', ')
+    {
+        return implode($glue, $things);
+    }
+
+    public static function array($things, $tags = [ '[', ']' ])
+    {
+
+        return $tags[ 0 ] . static::sequence($things) . $tags[ 1 ];
+    }
+
+    public function map(array $fields)
+    {
+
+        return collect($this->data())->only($fields)->toArray();
     }
 
     /**
@@ -130,83 +222,41 @@ class Recipe
      *
      * @return string
      */
-    public function render($saveTo = null)
+    public function render()
     {
-        $data = $this->build();
+        $input = $this->build();
+
+        if ($renderOn = $this->renderOn) {
+            return $renderOn::quickRender($input);
+        }
+
+        if (! $this->template && ( get_class($this) != self::class )) {
+            throw new \Exception(static::class . ' does not provide a template');
+        }
 
         if (method_exists($this, 'dataForTemplate')) {
-            $data = $this->dataForTemplate();
+            $input = $this->dataForTemplate();
         }
 
-        $eventDispatcher = new Dispatcher(new Container());
+        // Initialize Blade
+        $viewResolver = new EngineResolver();
+        $viewResolver->register('blade', function () {
+            $blade_compiler = new BladeCompiler(new Filesystem(), '/tmp');
+            $blade_compiler->directive('startPhp', function ($v) {
+                return '{!! "<?p"."hp" !!}';
+            });
+            $blade_compiler->directive('sequence', function ($v) {
+                return '\Afterflow\Recipe\Recipe::sequence(' . $v . ')';
+            });
+            $blade_compiler->directive('indent', function ($v) {
+                return '\Afterflow\Recipe\Recipe::indent(' . $v . ')';
+            });
 
-        $viewResolver  = new EngineResolver();
-        $bladeCompiler = new BladeCompiler(new Filesystem(), '/tmp');
-
-        $viewResolver->register('blade', function () use ($bladeCompiler) {
-            return new CompilerEngine($bladeCompiler);
+            return new CompilerEngine($blade_compiler);
         });
+        $viewFactory = new \Illuminate\View\Factory($viewResolver, new FileViewFinder(new Filesystem(), [ '/tmp' ]), new Dispatcher(new Container()));
 
-        $viewFinder  = new FileViewFinder(new Filesystem(), [ '/tmp' ]);
-        $viewFactory = new \Illuminate\View\Factory($viewResolver, $viewFinder, $eventDispatcher);
-
-        $rendered = $viewFactory->file($this->template, $data)->render();
-        if ($saveTo) {
-            file_put_contents($saveTo, $rendered);
-        }
-
-        return $rendered;
-    }
-
-    protected function errors()
-    {
-        $rules = [];
-
-        foreach ($this->props as $name => $parameter) {
-            if (! is_array($parameter)) {
-                $parameter = [
-                    'default' => $parameter,
-                ];
-            }
-
-            if (isset($parameter[ 'rules' ])) {
-                $rules[ $name ] = $parameter[ 'rules' ];
-            }
-
-            $default       = null;
-            $defaultIsNull = true;
-
-            if (isset($parameter[ 'default' ])) {
-                $default       = $parameter[ 'default' ];
-                $defaultIsNull = false;
-            } else {
-                try {
-                    $parameter[ 'default' ];
-                } catch (\Exception $e) {
-                    $defaultIsNull = false;
-                }
-            }
-
-
-            if (! isset($this->data[ $name ])) {
-                if ($defaultIsNull) {
-                    $this->data[ $name ] = null;
-                } else {
-                    $this->data[ $name ] = $default;
-                }
-            }
-        }
-
-        $loader     = new FileLoader(new Filesystem(), 'lang');
-        $translator = new Translator($loader, 'en');
-        $validation = new Factory($translator, new Container());
-
-        $validator = $validation->make($this->data, $rules);
-
-        if ($validator->fails()) {
-            return $validator->errors();
-        }
-
-        return [];
+        // Render
+        return $viewFactory->file($this->template, $input)->render();
     }
 }

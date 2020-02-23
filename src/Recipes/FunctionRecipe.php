@@ -17,67 +17,64 @@ class FunctionRecipe extends Recipe
         'name'       => [
             'rules' => 'required',
         ],
-        'arguments'  => [],
+        'arguments'  => [
+            'default' => [],
+            'rules'   => 'array',
+        ],
         'visibility' => null,
         'body'       => '',
-        'static'     => false,
-        'abstract'   => false,
+        'static'     => [
+            'default' => false,
+            'rules'   => 'boolean',
+        ],
+        'abstract'   => [
+            'default' => false,
+            'rules'   => 'boolean',
+        ],
         'docBlock'   => '',
         'return'     => [],
     ];
 
     public function arguments($value)
     {
-        $this->data[ 'arguments' ] = $value;
-
-        return $this;
+        return $this->input('arguments', $value);
     }
 
-    public function body($name)
+    public function body($value)
     {
-        $this->data[ 'body' ] = $name;
-
-        return $this;
+        return $this->input('body', $value);
     }
 
-    public function name($name)
+    public function name($value)
     {
-        $this->data[ 'name' ] = $name;
-
-        return $this;
+        return $this->input('name', $value);
     }
 
-    public function return($v)
+    public function return($value)
     {
-        $this->data[ 'return' ] = $v;
-
-        return $this;
+        return $this->input('return', $value);
     }
 
     public function abstract()
     {
-        $this->data[ 'abstract' ] = true;
-
-        return $this;
+        return $this->input('abstract', true);
     }
 
     public function static()
     {
-        $this->data[ 'static' ] = true;
-
-        return $this;
+        return $this->input('static', true);
     }
 
     public function dataForTemplate()
     {
 
-        $data = $this->data;
+        $data = $this->data();
 
         $data[ 'methodCall' ] = MethodCallRecipe::make()
-                                                ->name($this->data[ 'name' ])
-                                                ->arguments($data[ 'arguments' ])->render();
+                                                ->name($this->data('name'))
+                                                ->arguments($this->data('arguments'))->render();
 
-        $data[ 'arguments' ] = collect($data[ 'arguments' ])->implode(', ');
+        $data[ 'arguments' ] = Recipe::sequence($data[ 'arguments' ]);
 
         return $data;
     }

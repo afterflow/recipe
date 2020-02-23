@@ -5,7 +5,7 @@ namespace Afterflow\Recipe\Recipes;
 class ConstructorRecipe extends FunctionRecipe
 {
 
-    protected $data = [
+    protected $input = [
         'name' => '__construct',
     ];
 }

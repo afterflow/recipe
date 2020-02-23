@@ -16,7 +16,18 @@ class {{ $name }} {{ isset($extends) ? 'extends '. $extends : '' }} {{ !empty($i
     use {{ @sequence($traits) }};
 @endunless
 
-@isset($content)
-{!! @indent($content) !!}
+@isset($table)
+{!! @indent($table) !!}
+@endisset
+@isset($vars)
+{!! @indent($vars) !!}
+@endisset
+
+@unless(empty($relations))
+{!! @indent( \Afterflow\Recipe\Recipe::sequence($relations,\Afterflow\Recipe\eol(2)) ) !!}
+@endunless
+
+@isset($methods)
+{!! @indent($methods) !!}
 @endisset
 }

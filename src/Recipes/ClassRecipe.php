@@ -20,11 +20,31 @@ class ClassRecipe extends Recipe
      * @var array
      */
     protected $props = [
-        'name'    => [
-            'rules' => 'required',
+        'name'       => [
+            'rules' => 'required|string',
         ],
-        'imports' => [
+        'extends'    => [
+            'default' => '',
+            'rules' => 'string',
+        ],
+        'namespace'  => [
+            'rules' => 'string',
+        ],
+        'content'    => [
+            'default' => '',
+            'rules'   => 'string',
+        ],
+        'imports'    => [
             'default' => [],
+            'rules'   => 'array',
+        ],
+        'implements' => [
+            'default' => [],
+            'rules'   => 'array',
+        ],
+        'traits'     => [
+            'default' => [],
+            'rules'   => 'array',
         ],
     ];
 
@@ -35,9 +55,7 @@ class ClassRecipe extends Recipe
      */
     public function namespace($value)
     {
-        $this->data[ 'namespace' ] = $value;
-
-        return $this;
+        return $this->input('namespace', $value);
     }
 
     /**
@@ -47,9 +65,7 @@ class ClassRecipe extends Recipe
      */
     public function content($value)
     {
-        $this->data[ 'content' ] = $value;
-
-        return $this;
+        return $this->input('content', $value);
     }
 
     /**
@@ -59,9 +75,7 @@ class ClassRecipe extends Recipe
      */
     public function name($value)
     {
-        $this->data[ 'name' ] = $value;
-
-        return $this;
+        return $this->input('name', $value);
     }
 
     /**
@@ -71,9 +85,7 @@ class ClassRecipe extends Recipe
      */
     public function traits($value)
     {
-        $this->data[ 'traits' ] = $value;
-
-        return $this;
+        return $this->input('traits', $value);
     }
 
     /**
@@ -83,9 +95,7 @@ class ClassRecipe extends Recipe
      */
     public function imports($value)
     {
-        $this->data[ 'imports' ] = $value;
-
-        return $this;
+        return $this->input('imports', $value);
     }
 
     /**
@@ -95,9 +105,7 @@ class ClassRecipe extends Recipe
      */
     public function implements($value)
     {
-        $this->data[ 'implements' ] = $value;
-
-        return $this;
+        return $this->input('implements', $value);
     }
 
     /**
@@ -107,8 +115,6 @@ class ClassRecipe extends Recipe
      */
     public function extends($value)
     {
-        $this->data[ 'extends' ] = $value;
-
-        return $this;
+        return $this->input('extends', $value);
     }
 }

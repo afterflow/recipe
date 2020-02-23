@@ -7,8 +7,15 @@ use Afterflow\Recipe\Recipes\ClassRecipe;
 use Afterflow\Recipe\Recipes\ClassVarRecipe;
 use Afterflow\Recipe\Recipes\ConstructorRecipe;
 use Afterflow\Recipe\Recipes\FunctionRecipe;
+use Afterflow\Recipe\Recipes\Laravel\Models\ModelRecipe;
+use Afterflow\Recipe\Recipes\Laravel\Models\Relations\BelongsToRelation;
+use Afterflow\Recipe\Recipes\Laravel\Models\Relations\HasManyRelation;
 use Afterflow\Recipe\Recipes\MethodCallRecipe;
 use PHPUnit\Framework\TestCase;
+
+use function Afterflow\Recipe\eol;
+use function Afterflow\Recipe\q;
+use function Afterflow\Recipe\qq;
 
 class RecipeTest extends TestCase
 {
@@ -35,17 +42,19 @@ class RecipeTest extends TestCase
 
     public function testClassRecipe()
     {
-        $data = ClassRecipe::make()->namespace('App')->name('User')->extends('Authenticatable')
+        $data = ClassRecipe::make()->namespace('App')->name('User')
+                           ->extends('Authenticatable')
+                           ->traits([ 'HasApiTokens', 'Notifiable' ])
                            ->imports([
                                'Illuminate\Foundation\Auth\User as Authenticatable',
                                'Illuminate\Notifications\Notifiable',
                                'Laravel\Passport\HasApiTokens',
                            ])
                            ->implements([ 'SomeInterface', 'OtherInterface' ])
-                           ->traits([ 'HasApiTokens', 'Notifiable' ])
                            ->render();
 
         $this->assertStringContainsString('class User', $data);
+        $this->assertStringContainsString('implements SomeInterface', $data);
     }
 
     public function testFunctionRecipe()
@@ -54,7 +63,6 @@ class RecipeTest extends TestCase
             ->with([
                 'name'       => 'cards',
                 'visibility' => 'public',
-                'arguments'  => [],
                 'return'     => '$this->hasMany(Card::class)',
             ])
             ->render();
@@ -65,13 +73,13 @@ class RecipeTest extends TestCase
     {
 
         try {
-            MethodCallRecipe::make()->on([ 'array' ])->name('something')->render();
+            ClassVarRecipe::make()->name([ 'something' ])->render();
         } catch (\Exception $e) {
             $this->assertStringContainsString('must be string', $e->getMessage());
         }
 
         $this->expectExceptionMessage('The name field is required.');
-        MethodCallRecipe::make()->on([ 'array' ])->render();
+        ClassRecipe::make()->namespace([ 'array' ])->render();
     }
 
     public function testMethodCall()
@@ -79,9 +87,9 @@ class RecipeTest extends TestCase
         $data = MethodCallRecipe::make()->assignTo('$user =')
                                 ->on('auth()->')
                                 ->name('user')
-                                ->arguments([ '$one' ])->render();
+                                ->arguments([ '$one', '$two' ])->render();
 
-        $this->assertEquals($data, '$user = auth()->user($one)');
+        $this->assertEquals($data, '$user = auth()->user($one, $two)');
     }
 
     public function testFluentFunctionRecipe()
@@ -100,11 +108,36 @@ class RecipeTest extends TestCase
 
         $data = ClassVarRecipe::make()->name('$name')
                               ->protected()
-                              ->value('"Vlad"')
+                              ->value(qq('Vlad'))
                               ->docBlock('// First Name')
                               ->render();
 
         $this->assertStringContainsString('protected $name = "Vlad";', $data);
+    }
+
+    public function testHasMany()
+    {
+        $data = HasManyRelation::make()->name('cards')->related('Card::class')->foreignKey(qq('user_id'))->render();
+        $this->assertStringContainsString('return $this->hasMany(Card::class, "user_id");', $data);
+    }
+
+    public function testModel()
+    {
+        $data = ModelRecipe::make()->name('User')
+                           ->table(q('users'))
+                           ->extends('Authenticatable')
+                           ->imports([
+                               'Illuminate\Foundation\Auth\User as Authenticatable',
+                               'Illuminate\Notifications\Notifiable',
+                           ])
+                           ->relations([
+                               HasManyRelation::make()->name('cards')->related('\App\Models\Card::class'),
+                               BelongsToRelation::make()->name('profile')->related('\App\Models\Profile::class'),
+                           ])
+                           ->render();
+
+        //      file_put_contents( 'build/User.php', $data );
+        $this->assertStringContainsString('class User extends Authenticatable', $data);
     }
 
     public function testNestedRecipes()
@@ -117,20 +150,20 @@ class RecipeTest extends TestCase
         /**
          * See ClassVarRecipe to learn how to render things without template
          */
-            implode(PHP_EOL . PHP_EOL, [
-                ClassVarRecipe::make()->protected()->name('$name')->docBlock('// First Name'),
-                ClassVarRecipe::make()->protected()->name('$lastName')->docBlock('// Last Name'),
+            Recipe::sequence([
+                ClassVarRecipe::make()->protected()->name('$name')->docBlock('// First Name')->render(),
+                ClassVarRecipe::make()->protected()->name('$lastName')->docBlock('// Last Name')->render(),
                 /**
                  * See ClassVarRecipe to learn how to filter data before render
                  */
                 ConstructorRecipe::make()->arguments([
                     'string $name',
                     'string $lastName',
-                ])->body('$this->name = $name;' . PHP_EOL . '$this->lastName = $lastName;')->render(),
+                ])->body('$this->name = $name;' . eol() . '$this->lastName = $lastName;')->render(),
                 FunctionRecipe::make()->name('getLastName')->return('$this->lastName;')->render(),
                 FunctionRecipe::make()->name('getName')->return('$this->name;')->render(),
-            ])
-        );
+            ], eol(2))
+        )->render();
 
         $this->assertStringContainsString('function getLastName', $data);
         $this->assertStringContainsString('function getName', $data);

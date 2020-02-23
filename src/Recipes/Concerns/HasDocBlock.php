@@ -7,8 +7,6 @@ trait HasDocBlock
 
     public function docBlock($value)
     {
-        $this->data[ 'docBlock' ] = $value;
-
-        return $this;
+        return $this->input('docBlock', $value);
     }
 }

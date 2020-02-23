@@ -17,10 +17,16 @@ class MethodCallRecipe extends Recipe
         'name'      => [
             'rules' => 'required',
         ],
-        'arguments' => [],
+        'arguments' => [
+            'default' => [],
+            'rules'   => 'array',
+        ],
         'object'    => [
             'default' => '',
-            'rules' => 'string'
+            'rules'   => 'string',
+        ],
+        'on'        => [
+            'rules' => 'string',
         ],
         'assignTo'  => null,
     ];
@@ -32,9 +38,7 @@ class MethodCallRecipe extends Recipe
      */
     public function arguments($value)
     {
-        $this->data[ 'arguments' ] = $value;
-
-        return $this;
+        return $this->input('arguments', $value);
     }
 
     /**
@@ -44,9 +48,7 @@ class MethodCallRecipe extends Recipe
      */
     public function assignTo($name)
     {
-        $this->data[ 'assignTo' ] = $name;
-
-        return $this;
+        return $this->input('assignTo', $name);
     }
 
     /**
@@ -56,7 +58,7 @@ class MethodCallRecipe extends Recipe
      */
     public function on($name)
     {
-        $this->data[ 'object' ] = $name;
+        return $this->input('object', $name);
 
         return $this;
     }
@@ -68,9 +70,7 @@ class MethodCallRecipe extends Recipe
      */
     public function name($name)
     {
-        $this->data[ 'name' ] = $name;
-
-        return $this;
+        return $this->input('name', $name);
     }
 
 
@@ -79,31 +79,20 @@ class MethodCallRecipe extends Recipe
      *
      * @return string
      */
-    public function render($to = null)
+    public function render()
     {
-        $data = $this->build();
 
         $string = '';
 
-        if ($v = $data[ 'assignTo' ]) {
+        if ($v = $this->data('assignTo')) {
             $string .= $v . ' ';
         }
 
-        if ($v = $data[ 'object' ]) {
+        if ($v = $this->data('object')) {
             $string .= $v . '';
         }
 
-        $string .= $data[ 'name' ] . '(';
-
-        $args = collect($data[ 'arguments' ])->implode(', ');
-
-        $string .= $args;
-
-        $string .= ')';
-
-        if ($to) {
-            file_put_contents($to, $string);
-        }
+        $string .= $this->data('name') . Recipe::array($this->data('arguments'), [ '(', ')' ]);
 
         return $string;
     }

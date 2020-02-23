@@ -13,69 +13,76 @@ class ClassVarRecipe extends Recipe
 
     protected $props = [
         'name'       => [
-            'rules' => 'required',
+            'rules' => 'required|string',
         ],
-        'visibility' => null,
+        'visibility' => [
+            'rules' => 'string|in:public,private,protected',
+        ],
         'value'      => [
+            'default' => '',
+            'rules' => 'string',
         ],
-        'static'     => false,
-        'const'      => false,
-        'docBlock'   => '',
+        'static'     => [
+            'default' => false,
+            'rules'   => 'boolean',
+        ],
+        'const'      => [
+            'default' => false,
+            'rules'   => 'boolean',
+        ],
+        'docBlock'   => [
+            'default' => '',
+            'rules'   => 'string',
+        ],
     ];
 
-    public function name($name)
+    public function name($value)
     {
-        $this->data[ 'name' ] = $name;
-
-        return $this;
+        return $this->input('name', $value);
     }
 
     public function value($value)
     {
-        $this->data[ 'value' ] = $value;
+        return $this->input('value', $value);
+    }
 
-        return $this;
+    public function const()
+    {
+        return $this->input('const', true);
     }
 
     public function static()
     {
-        $this->data[ 'static' ] = true;
-
-        return $this;
+        return $this->input('static', true);
     }
 
-    public function render($to = null)
+    public function render()
     {
-        $data = $this->build();
 
         $string = '';
 
-        if ($v = $data[ 'docBlock' ]) {
+        if ($v = $this->data('docBlock')) {
             $string .= $v . PHP_EOL;
         }
 
-        if ($v = $data[ 'visibility' ]) {
+        if ($v = $this->data('visibility')) {
             $string .= $v . ' ';
         }
 
-        if ($data[ 'static' ]) {
+        if ($this->data('static')) {
             $string .= 'static ';
         }
 
-        if ($data[ 'const' ]) {
-            $string .= 'const';
+        if ($this->data('const')) {
+            $string .= 'const ';
         }
 
-        $string .= $data[ 'name' ];
-        if ($data[ 'value' ]) {
-            $string .= ' = ' . $data[ 'value' ];
+        $string .= $this->data('name');
+        if ($v = $this->data('value')) {
+            $string .= ' = ' . $v;
         }
 
         $string .= ';';
-
-        if ($to) {
-            file_put_contents($to, $string);
-        }
 
         return $string;
     }
