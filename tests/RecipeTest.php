@@ -142,7 +142,6 @@ class RecipeTest extends TestCase
 
     public function testNestedRecipes()
     {
-
         /**
          * This recipe nests other recipes and shows alternative syntax to pass data through constructor
          */

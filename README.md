@@ -15,7 +15,7 @@ This means you can safely include it in your own framework-agnostic composer pac
 ## Installation
 
 ```bash
-composer require afterflow/recipe
+composer require afterflow/recipe 0.1.*
 ```
 
 ## Basic Usage
@@ -83,7 +83,7 @@ class {{ $name }} {{ isset($extends) ? 'extends '. $extends : '' }} {{ !empty($i
 
 @isset($content)
 {{--This function indents each line of $content string with 4 spaces--}}
-{!! \Afterflow\Recipe\Recipe::indent($content,4) !!}
+@indent($content,4)
 @endisset
 }
 
@@ -105,13 +105,34 @@ class ClassRecipe extends Recipe
     protected $template = __DIR__ . '/../../templates/class.blade.php';
 
     protected $props = [
-        'name'    => [
-            'rules' => 'required',
+        'name'       => [
+            'rules' => 'required|string',
         ],
-        'imports' => [
+        'extends'    => [
+            'default' => '',
+            'rules' => 'string',
+        ],
+        'namespace'  => [
+            'rules' => 'string',
+        ],
+        'content'    => [
+            'default' => '',
+            'rules'   => 'string',
+        ],
+        'imports'    => [
             'default' => [],
+            'rules'   => 'array',
+        ],
+        'implements' => [
+            'default' => [],
+            'rules'   => 'array',
+        ],
+        'traits'     => [
+            'default' => [],
+            'rules'   => 'array',
         ],
     ];
+
 }
 ```
 
@@ -143,8 +164,6 @@ Few new things happen here since we are now using our own `ClassRecipe` class th
 This allows us to define template inside the class and have a shorter usage syntax.
 
 Here you can notice that we're defining a new `$props` variable which is somewhat similar to what VueJs uses in it's components.
-
-Two important things happen here:
 
 First, we added some validation telling Recipe that `name` data property is mandatory in this recipe. 
 You can define validation rules just like you normally would in your Laravel application - that's the same thing.
@@ -234,7 +253,7 @@ class FunctionRecipe extends Recipe
     public function dataForTemplate()
     {
 
-        $data = $this->data;
+        $data = $this->data();
 
         $data['arguments'] = collect($data['arguments'])->implode(', ');
 
@@ -262,48 +281,56 @@ class ClassVarRecipe extends Recipe
 
     protected $props = [
         'name'       => [
-            'rules' => 'required',
+            'rules' => 'required|string',
         ],
-        'visibility' => null,
+        'visibility' => [
+            'rules' => 'string|in:public,private,protected',
+        ],
         'value'      => [
+            'default' => '',
+            'rules' => 'string',
         ],
-        'static'     => false,
-        'const'      => false,
-        'docBlock'   => '',
+        'static'     => [
+            'default' => false,
+            'rules'   => 'boolean',
+        ],
+        'const'      => [
+            'default' => false,
+            'rules'   => 'boolean',
+        ],
+        'docBlock'   => [
+            'default' => '',
+            'rules'   => 'string',
+        ],
     ];
 
-    public function render($to = null)
+    public function render()
     {
-        $data = $this->build();
 
         $string = '';
 
-        if ($v = $data[ 'docBlock' ]) {
+        if ($v = $this->data('docBlock')) {
             $string .= $v . PHP_EOL;
         }
 
-        if ($v = $data[ 'visibility' ]) {
+        if ($v = $this->data('visibility')) {
             $string .= $v . ' ';
         }
 
-        if ($data[ 'static' ]) {
+        if ($this->data('static')) {
             $string .= 'static ';
         }
 
-        if ($data[ 'const' ]) {
-            $string .= 'const';
+        if ($this->data('const')) {
+            $string .= 'const ';
         }
 
-        $string .= $data[ 'name' ];
-        if ($data[ 'value' ]) {
-            $string .= ' = ' . $data[ 'value' ];
+        $string .= $this->data('name');
+        if ($v = $this->data('value')) {
+            $string .= ' = ' . $v;
         }
 
         $string .= ';';
-
-        if ($to) {
-            file_put_contents($to, $string);
-        }
 
         return $string;
     }
@@ -318,31 +345,20 @@ To make process a little more fun and simple, you can sprinkle some fluency onto
 
     // ...
 
-    public function name( $name ) {
-        $this->data[ 'name' ] = $name;
 
-        return $this;
+    public function name($value)
+    {
+        return $this->input('name', $value);
     }
 
-    public function visibility( $value ) {
-        $this->data[ 'visibility' ] = $value;
-
-        return $this;
+    public function value($value)
+    {
+        return $this->input('value', $value);
     }
 
-    public function protected() {
-
-        return $this->visibility( 'protected' );
-    }
-
-    public function private() {
-
-        return $this->visibility( 'private' );
-    }
-
-    public function public() {
-
-        return $this->visibility( 'public' );
+    public function const()
+    {
+        return $this->input('const', true);
     }
 
     // ...
@@ -361,6 +377,8 @@ $data = ClassVarRecipe::make()->name( '$name' )
 
 ```
 
+Or use `MagicSetters` trait on your recipe to achieve the same functionality (this will not handle IDE highlighting though);
+
 ## Nested recipes
 
 Now let's see how powerful this can be:
@@ -370,25 +388,24 @@ Now let's see how powerful this can be:
         /**
          * This recipe nests other recipes and shows alternative syntax to pass data through constructor
          */
-        $data = ClassRecipe::make()->namespace( 'App' )->name( 'User' )->content(
-
+        $data = ClassRecipe::make()->namespace('App')->name('User')->content(
         /**
          * See ClassVarRecipe to learn how to render things without template
          */
-            implode( PHP_EOL . PHP_EOL, [
-                ClassVarRecipe::make()->protected()->name( '$name' )->docBlock( '// First Name' ),
-                ClassVarRecipe::make()->protected()->name( '$lastName' )->docBlock( '// Last Name' ),
+            Recipe::sequence([
+                ClassVarRecipe::make()->protected()->name('$name')->docBlock('// First Name')->render(),
+                ClassVarRecipe::make()->protected()->name('$lastName')->docBlock('// Last Name')->render(),
                 /**
                  * See ClassVarRecipe to learn how to filter data before render
                  */
-                ConstructorRecipe::make()->arguments( [
+                ConstructorRecipe::make()->arguments([
                     'string $name',
                     'string $lastName',
-                ] )->body( '$this->name = $name;' . PHP_EOL . '$this->lastName = $lastName;' ),
-                FunctionRecipe::make()->name( 'getLastName' )->return( '$this->lastName;' ),
-                FunctionRecipe::make()->name( 'getName' )->return( '$this->name;' ),
-            ] )
-        );
+                ])->body('$this->name = $name;' . eol() . '$this->lastName = $lastName;')->render(),
+                FunctionRecipe::make()->name('getLastName')->return('$this->lastName;')->render(),
+                FunctionRecipe::make()->name('getName')->return('$this->name;')->render(),
+            ], eol(2))
+        )->render();
 
 ```
 
@@ -433,10 +450,49 @@ class User
 
 Now you can extend or nest the `ClassRecipe` to make a Laravel Model recipe and create a console command to generate a model or do any other crazy stuff.
 
-### Built in recipes you can use:
+### Built in recipes you can use (work in progress):
 
 - ClassRecipe
 - ClassVarRecipe
 - FunctionRecipe
 - MethodCallRecipe
 - ConstructorRecipe
+- Laravel/Models/ModelRecipe
+- Laravel/Models/Relations/RelationRecipe
+
+### Directives
+
+```blade
+
+@indent($string, $spaces = 4) - indents each line of string output
+@sequence($array, $glue = ', ') - useful to render arrays
+
+```
+
+### Helpers
+All helpers are namespaced:
+
+```php
+
+function q( $what ) {
+	return "'" . $what . "'";
+}
+
+function qq( $what ) {
+	return '"' . $what . '"';
+}
+
+function eol( $times = 1 ) {
+	$str = '';
+	for ( $i = 0; $i < $times; $i ++ ) {
+		$str .= PHP_EOL;
+	}
+
+	return $str;
+}
+
+function arr( $what, $d = [ '[', ']' ] ) {
+	return Recipe::array( $what, $d );
+}
+
+```
